@@ -2,8 +2,8 @@
 """
 trigger.py
 ----------
-👏👏  Double clap → Open GitHub in Safari + Open Claude app
-👏    Single clap → Close Safari window + Exit program
+👏👏  Double clap → Heavy voice greeting + Opens GitHub in Safari
+👏    Single clap → Heavy voice farewell + Closes Safari window + Exits
 
 Dependencies:
     pip install sounddevice numpy
@@ -22,14 +22,24 @@ import signal
 
 GITHUB_URL         = "https://github.com/Shashwat-19"
 
+# Voice settings — Fred is the deepest built-in macOS voice
+VOICE              = "Bad"
+VOICE_RATE         = 130       # words per minute — lower = slower & heavier (default is 175)
+
+OPEN_LINE          = "Hello sir... lets get back to work!"
+CLOSE_LINE         = "Have a great day... master."
+
 SAMPLE_RATE        = 44100
 CHUNK_SIZE         = 512
 CLAP_THRESHOLD     = 0.25
-DOUBLE_CLAP_WINDOW = 1.2    # seconds to wait for a 2nd clap
+DOUBLE_CLAP_WINDOW = 1.2
 SILENCE_RATIO      = 0.4
 COOLDOWN           = 3.0
 
 # ─── ACTIONS ───────────────────────────────────────────────────────────────────
+
+def speak(line: str):
+    subprocess.Popen(["say", "-v", "Fred", "-r", str(VOICE_RATE), "-a", "MacBook Air Speakers", line])
 
 def open_github_in_safari():
     script = f'''
@@ -40,29 +50,16 @@ def open_github_in_safari():
     '''
     subprocess.run(["osascript", "-e", script], check=True)
 
-def open_claude_app():
-    subprocess.run(["open", "-a", "Claude"], check=True)
-
 def trigger_open():
-    print("\n🎯 Double clap — Opening GitHub + Claude...")
-    t1 = threading.Thread(target=open_github_in_safari, daemon=True)
-    t2 = threading.Thread(target=open_claude_app, daemon=True)
-    t1.start(); t2.start()
-    t1.join();  t2.join()
+    print("\n🎯 Double clap — Opening GitHub...")
+    speak(OPEN_LINE)
+    open_github_in_safari()
     print("✅ Done. Listening...\n")
 
 def trigger_close():
-    print("\n🛑 Single clap — Closing Safari window + Exiting...\n")
-    script = '''
-        tell application "Safari"
-            if (count of windows) > 0 then
-                close front window
-            end if
-        end tell
-    '''
-    subprocess.run(["osascript", "-e", script])
-    # Give osascript a moment, then kill self cleanly
-    time.sleep(0.4)
+    print("\n🛑 Single clap — Exiting...\n")
+    speak(CLOSE_LINE)
+    time.sleep(2.5)
     os.kill(os.getpid(), signal.SIGINT)
 
 # ─── DETECTOR ──────────────────────────────────────────────────────────────────
@@ -80,14 +77,13 @@ class ClapDetector:
         self._last_clap_time = 0.0
         self._in_spike       = False
         self._cooldown_until = 0.0
-        self._timer          = None   # waits to confirm single clap
+        self._timer          = None
 
     def _cancel_timer(self):
         if self._timer and self._timer.is_alive():
             self._timer.cancel()
 
     def _on_single_clap_confirmed(self):
-        """Called when DOUBLE_CLAP_WINDOW expires with only 1 clap."""
         with self._lock:
             if self._clap_count == 1:
                 self._clap_count = 0
@@ -116,7 +112,6 @@ class ClapDetector:
                 print(f"  👏 Clap #{self._clap_count}  (amplitude={amplitude:.3f})")
 
                 if self._clap_count == 1:
-                    # Start a timer — if no 2nd clap arrives, it's a single clap
                     self._cancel_timer()
                     self._timer = threading.Timer(
                         DOUBLE_CLAP_WINDOW, self._on_single_clap_confirmed
@@ -125,7 +120,6 @@ class ClapDetector:
                     self._timer.start()
 
                 elif self._clap_count >= 2:
-                    # Double clap confirmed — cancel the single-clap timer
                     self._cancel_timer()
                     self._clap_count     = 0
                     self._cooldown_until = now + COOLDOWN
@@ -135,16 +129,15 @@ class ClapDetector:
             elif amplitude < CLAP_THRESHOLD * SILENCE_RATIO:
                 self._in_spike = False
 
-
 # ─── ENTRY POINT ───────────────────────────────────────────────────────────────
 
 def main():
     detector = ClapDetector()
 
     print("🎙  Clap Trigger ready")
-    print("   👏👏  Double clap → Open GitHub + Claude")
-    print("   👏    Single clap → Close Safari window + Exit")
-    print(f"   Threshold={CLAP_THRESHOLD} | Window={DOUBLE_CLAP_WINDOW}s | Cooldown={COOLDOWN}s")
+    print("   👏👏  Double clap → Open GitHub + Heavy voice greeting")
+    print("   👏    Single clap → Heavy voice farewell + Close Safari + Exit")
+    print(f"   Voice={VOICE} | Rate={VOICE_RATE} | Threshold={CLAP_THRESHOLD}")
     print("   Ctrl+C to force quit\n")
 
     try:
@@ -164,7 +157,6 @@ def main():
         print(f"\n❌ Audio error: {e}")
         print("   → System Settings → Privacy → Microphone → enable Terminal")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
