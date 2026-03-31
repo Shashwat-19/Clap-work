@@ -54,10 +54,10 @@ def trigger_open():
     print("\n🎯 Double clap — Opening GitHub...")
     speak(OPEN_LINE)
     open_github_in_safari()
-    print("✅ Done. Listening...\n")
+    print("Done. Listening...\n")
 
 def trigger_close():
-    print("\n🛑 Single clap — Exiting...\n")
+    print("\nSingle clap — Exiting...\n")
     speak(CLOSE_LINE)
     time.sleep(2.5)
     os.kill(os.getpid(), signal.SIGINT)
@@ -109,7 +109,7 @@ class ClapDetector:
                     self._clap_count = 1
 
                 self._last_clap_time = now
-                print(f"  👏 Clap #{self._clap_count}  (amplitude={amplitude:.3f})")
+                print(f"  Clap #{self._clap_count}  (amplitude={amplitude:.3f})")
 
                 if self._clap_count == 1:
                     self._cancel_timer()
@@ -135,8 +135,8 @@ def main():
     detector = ClapDetector()
 
     print("🎙  Clap Trigger ready")
-    print("   👏👏  Double clap → Open GitHub + Heavy voice greeting")
-    print("   👏    Single clap → Heavy voice farewell + Close Safari + Exit")
+    print("   Double clap → Open GitHub + Heavy voice greeting")
+    print("   Single clap → Heavy voice farewell + Close Safari + Exit")
     print(f"   Voice={VOICE} | Rate={VOICE_RATE} | Threshold={CLAP_THRESHOLD}")
     print("   Ctrl+C to force quit\n")
 
@@ -152,9 +152,9 @@ def main():
                 time.sleep(0.1)
 
     except KeyboardInterrupt:
-        print("\n👋 Exited.")
+        print("\nExited.")
     except sd.PortAudioError as e:
-        print(f"\n❌ Audio error: {e}")
+        print(f"\nAudio error: {e}")
         print("   → System Settings → Privacy → Microphone → enable Terminal")
         sys.exit(1)
 
