@@ -33,7 +33,7 @@ SAMPLE_RATE        = 44100
 CHUNK_SIZE         = 512
 CLAP_THRESHOLD     = 0.25
 DOUBLE_CLAP_WINDOW = 1.2
-SILENCE_RATIO      = 0.4
+SILENCE_RATIO      = 0.4    
 COOLDOWN           = 3.0
 
 # ─── ACTIONS ───────────────────────────────────────────────────────────────────
